@@ -1,0 +1,36 @@
+name: Build and deploy TD2 app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Build and start the containers
+        run: docker compose -p td2-app up -d --build
+
+      - name: Show the containers
+        run: docker compose -p td2-app ps
+
+      - name: Smoke test the API
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost/api/user/all; then
+              echo
+              echo "API is up"
+              exit 0
+            fi
+            echo "Waiting for the API... ($i/30)"
+            sleep 5
+          done
+          echo "API did not answer in time"
+          exit 1
+
+      - name: Clean old images
+        run: docker image prune -f
