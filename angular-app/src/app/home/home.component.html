@@ -1,26 +1,109 @@
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
+<div class="page">
+  <header class="hero">
+    <div>
+      <span class="eyebrow">TD2 · Angular + Spring Boot + MySQL</span>
+      <h1>User <span class="grad">Directory</span></h1>
+      <p class="subtitle">Add, search and manage the users stored in the database.</p>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value">{{ usersList.length }}</span>
+        <span class="stat-label">Total users</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ filteredUsers.length }}</span>
+        <span class="stat-label">Shown</span>
+      </div>
+    </div>
+  </header>
 
-<div class="centered-div">
-  <table class="table-container">
-    <thead>
-      <tr>
-        <td class="td">ID Nouran Zouabi</td>
-        <td class="td">First Name</td>
-        <td class="td">Last Name</td>
-        <td class="td">Action</td>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let user of usersList">
-        <td class="td">{{user.id}}</td>
-        <td class="td">{{user.firstName}}</td>
-        <td class="td">{{user.lastName}}</td>
-        <td> <i class="fa fa-trash" aria-hidden="true" (click)="deleteUser(user?.id || '')"></i></td>
-      </tr>
-    </tbody>
-  </table>
-  <input type="text" placeholder="First Name" #firstname>
-  <input type="text" placeholder="Last Name" #lastname style="margin-top: 10px;">
-  <button (click)="addUser(firstname.value,lastname.value)" style="margin-top: 30px;">add User</button>
+  <main class="layout">
+    <section class="card form-card">
+      <h2>Add a user</h2>
+      <label class="field">
+        <span>First name</span>
+        <input #firstInput type="text" placeholder="e.g. Ghassen" autocomplete="off"
+               (keyup.enter)="lastInput.focus()">
+      </label>
+      <label class="field">
+        <span>Last name</span>
+        <input #lastInput type="text" placeholder="e.g. Amairi" autocomplete="off"
+               (keyup.enter)="addUser(firstInput, lastInput)">
+      </label>
+      <button class="btn-primary" [disabled]="saving" (click)="addUser(firstInput, lastInput)">
+        <span *ngIf="!saving">+ Add user</span>
+        <span *ngIf="saving" class="spinner" aria-label="Saving"></span>
+      </button>
+      <p class="hint">Tip: press Enter to go to the next field, and Enter again to save.</p>
+    </section>
 
+    <section class="card list-card">
+      <div class="list-head">
+        <h2>Users</h2>
+        <div class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input type="search" placeholder="Search by name or ID…"
+                 (input)="searchTerm = $any($event.target).value">
+        </div>
+        <button class="icon-btn" title="Refresh" (click)="loadUsers()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>
+        </button>
+      </div>
+
+      <div class="cols">
+        <button class="col-id" (click)="sortBy('id')">ID <span>{{ arrow('id') }}</span></button>
+        <button (click)="sortBy('firstName')">First name <span>{{ arrow('firstName') }}</span></button>
+        <button (click)="sortBy('lastName')">Last name <span>{{ arrow('lastName') }}</span></button>
+        <span class="col-actions"></span>
+      </div>
+
+      <div *ngIf="loading" class="skeletons">
+        <div class="skeleton" *ngFor="let s of [1, 2, 3, 4]"></div>
+      </div>
+
+      <div *ngIf="!loading && loadError" class="state">
+        <p class="state-title">Could not reach the API</p>
+        <p class="state-text">Check that the backend container is running.</p>
+        <button class="btn-primary small" (click)="loadUsers()">Retry</button>
+      </div>
+
+      <div *ngIf="!loading && !loadError && filteredUsers.length === 0" class="state">
+        <p class="state-title">{{ searchTerm ? 'No match' : 'No users yet' }}</p>
+        <p class="state-text">
+          {{ searchTerm ? 'Try another name or ID.' : 'Add the first one with the form.' }}
+        </p>
+      </div>
+
+      <ul *ngIf="!loading && !loadError" class="rows">
+        <li *ngFor="let user of filteredUsers; let i = index; trackBy: trackById"
+            class="row" [class.removing]="removingId === idOf(user)"
+            [style.animation-delay.ms]="i * 40">
+          <span class="col-id id">#{{ user.id }}</span>
+          <span class="person">
+            <span class="avatar" [style.background]="avatarColor(user)">{{ initials(user) }}</span>
+            {{ user.firstName }}
+          </span>
+          <span>{{ user.lastName }}</span>
+          <span class="col-actions">
+            <button *ngIf="pendingDeleteId !== idOf(user); else confirmBox"
+                    class="icon-btn danger" title="Delete" (click)="askDelete(user)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>
+            </button>
+            <ng-template #confirmBox>
+              <span class="confirm">
+                <button class="btn-danger" (click)="confirmDelete(user)">Delete</button>
+                <button class="btn-ghost" (click)="cancelDelete()">Cancel</button>
+              </span>
+            </ng-template>
+          </span>
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <div class="toasts" aria-live="polite">
+    <div *ngFor="let t of toasts" class="toast" [class.error]="t.type === 'error'">
+      {{ t.message }}
+    </div>
+  </div>
 </div>
