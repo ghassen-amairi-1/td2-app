@@ -1,0 +1,39 @@
+name: CI/CD to Kubernetes
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOCKERHUB_USER: ghassenibiza1
+
+jobs:
+  build-push-deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set the image tag from the commit
+        run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "$DOCKERHUB_USER" --password-stdin
+
+      - name: Build images
+        run: |
+          docker build -t "$DOCKERHUB_USER/td2-backend:$IMAGE_TAG" ./springboot/app
+          docker build -t "$DOCKERHUB_USER/td2-frontend:$IMAGE_TAG" ./angular-app
+
+      - name: Push images
+        run: |
+          docker push "$DOCKERHUB_USER/td2-backend:$IMAGE_TAG"
+          docker push "$DOCKERHUB_USER/td2-frontend:$IMAGE_TAG"
+
+      - name: Trigger the Jenkins deployment
+        run: |
+          curl -fsS -X POST \
+            --user "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }}" \
+            "http://localhost:8080/job/td2-deploy/buildWithParameters?IMAGE_TAG=$IMAGE_TAG"
+          echo "Jenkins triggered with IMAGE_TAG=$IMAGE_TAG"
