@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+  namespace: td2
+type: Opaque
+stringData:
+  MYSQL_ROOT_PASSWORD: root
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: td2
+data:
+  MYSQL_DATABASE: demo
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql-service:3306/demo
+  SPRING_DATASOURCE_USERNAME: root
+  SERVER_PORT: "8081"
