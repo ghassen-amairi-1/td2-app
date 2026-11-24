@@ -49,6 +49,7 @@ pipeline {
         }
       }
     }
+}
 
   post {
     success { echo "Deployed tag ${params.IMAGE_TAG} to Kubernetes" }
