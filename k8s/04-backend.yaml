@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghassenibiza1/td2-backend:v1
+          image: ${DOCKERHUB_USER}/td2-backend:${IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

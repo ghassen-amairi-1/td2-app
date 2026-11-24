@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghassenibiza1/td2-frontend:v1
+          image: ${DOCKERHUB_USER}/td2-frontend:${IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
