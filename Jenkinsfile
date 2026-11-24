@@ -38,11 +38,17 @@ pipeline {
 
     stage('Smoke test') {
       steps {
-        sh 'curl -fsS "$APP_URL/" > /dev/null'
-        sh 'curl -fsS "$APP_URL/api/user/all"'
+        withCredentials([file(credentialsId: 'kubeconfig-td2', variable: 'KUBECONFIG')]) {
+          sh '''
+            curl -fsS "$APP_URL/" > /dev/null
+            curl -fsS "$APP_URL/api/user/all"
+            ACTUAL=$(kubectl -n td2 get deploy frontend -o jsonpath='{.spec.template.spec.containers[0].image}')
+            echo "Deployed frontend image: $ACTUAL"
+            test "$ACTUAL" = "$DOCKERHUB_USER/td2-frontend:$IMAGE_TAG"
+          '''
+        }
       }
     }
-  }
 
   post {
     success { echo "Deployed tag ${params.IMAGE_TAG} to Kubernetes" }
