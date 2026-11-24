@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   parameters {
-    string(name: 'IMAGE_TAG', defaultValue: 'v1', description: 'Docker image tag to deploy')
+    string(name: 'IMAGE_TAG', defaultValue: '', description: 'Docker image tag to deploy')
   }
 
   environment {
